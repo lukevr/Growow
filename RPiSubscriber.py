@@ -31,7 +31,7 @@ def main():
 
         if address == "P" and not is_process_running(pro):
             # Play
-            cmd = "raspivid -vf -n -w 640 -h 480 -o - -t 0 -b 2000000 | nc 178.214.221.154 5777"
+            cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
             pro = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
             print("[%s] %s -- %s" % (address, contents, pro))
 
