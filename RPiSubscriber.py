@@ -24,6 +24,7 @@ def main():
     subscriber.setsockopt(zmq.SUBSCRIBE, b"S")
 
     pro = None
+    time2sleep = 0.5
     while True:
         # Read envelope with address
         [address, contents] = subscriber.recv_multipart()
@@ -33,17 +34,21 @@ def main():
             cmd = "raspivid -vf -n -w 640 -h 480 -t 0 -b 2000000 | nc 178.214.221.154 5777"
             pro = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
             print("[%s] %s -- %s" % (address, contents, pro))
-        if address == "S" and pro is not(None) and is_process_running(pro):
+
+        if address == "S" and is_process_running(pro):
+            # Stop
             os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
             print("[%s] %s -- %s" % (address, contents, pro))
+
         address == 0;
-        time.sleep(0.5)
+        time.sleep(time2sleep)
 
     # We never get here but clean up anyhow
     subscriber.close()
     context.term()
 
 def is_process_running(pro):
+
     if pro is None:
         return False
     try:
