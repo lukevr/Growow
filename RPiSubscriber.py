@@ -34,6 +34,7 @@ class SubscriberListenerThread(Thread):
         self.subscriber.setsockopt(zmq.SUBSCRIBE, b"P")
         self.subscriber.setsockopt(zmq.SUBSCRIBE, b"S")
         self.streamer = RasPiVidThread()
+        self.run()
     
     def start_streaming(self):
         self.is_streaming = True
