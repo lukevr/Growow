@@ -5,8 +5,57 @@ import os
 import time
 import signal
 import subprocess
+from threading import Thread,Event
 
 # import sys
+
+class RasPiVidThread(Thread):
+    def __init__(self):
+        super(self.__class__,self).__init__()
+        self.event_stop = Event()
+        self.cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
+    
+    def stop(self):
+        self.event_stop.set()
+        self.process.terminate()
+
+    def run(self):
+        self.process = subprocess.Popen(self.cmd,
+                                        stdout=subprocess.PIPE,
+                                        shell=True)
+
+class SubscriberListenerThread(Thread):
+    def __init__(self,connect_to='tcp://178.214.221.154:5563'):
+        super(self.__class__,self).__init__()
+        self.is_streaming = False
+        self.context = zmq.Context()
+        self.subscriber = context.socket(zmq.SUB)
+        self.subscriber.connect(connect_to)
+        self.subscriber.setsockopt(zmq.SUBSCRIBE, b"P")
+        self.subscriber.setsockopt(zmq.SUBSCRIBE, b"S")
+        self.streamer = RasPiVidThread()
+    
+    def start_streaming(self):
+        self.is_streaming = True
+        self.streamer.run()
+
+    def stop_streaming(self):
+        self.streamer.stop()
+        self.is_streaming = True
+    
+    def run(self):
+        while 1:
+            [address, contents] = self.subscriber.recv_multipart()
+            print('{} {} {}'.format(self.streamer,
+                                    repr(address),
+                                    rerp(contents)))
+            if "P" == address and not self.is_streaming:
+                self.start_streaming()
+
+            if "S" == address and self.is_streaming:
+                self.stop_streaming()
+            
+            time.sleep(1)
 
 
 def main():
@@ -57,5 +106,10 @@ def is_process_running(pro):
     except OSError:
         return False
 
+
+def main2():
+    subscriber = SubscriberListenerThread()
+    subscriber.join()
+
 if __name__ == "__main__":
-    main()
+    main2()
