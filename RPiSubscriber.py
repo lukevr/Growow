@@ -29,7 +29,7 @@ class SubscriberListenerThread(Thread):
         super(self.__class__,self).__init__()
         self.is_streaming = False
         self.context = zmq.Context()
-        self.subscriber = context.socket(zmq.SUB)
+        self.subscriber = self.context.socket(zmq.SUB)
         self.subscriber.connect(connect_to)
         self.subscriber.setsockopt(zmq.SUBSCRIBE, b"P")
         self.subscriber.setsockopt(zmq.SUBSCRIBE, b"S")
