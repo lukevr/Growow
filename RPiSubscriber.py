@@ -17,7 +17,17 @@ class RasPiVidThread(Thread):
     
     def stop(self):
         self.event_stop.set()
+        pid = self.process.pid()
         self.process.terminate()
+        # cleanup: force kill if terminate weren't successfull:
+        try:
+            time.sleep(0.5)
+            os.kill(pid, 0)
+            self.process.kill()
+        except OSError,e:
+            # already terminated
+            pass
+            
 
     def run(self):
         self.process = subprocess.Popen(self.cmd,
@@ -43,7 +53,7 @@ class SubscriberListenerThread(Thread):
 
     def stop_streaming(self):
         self.streamer.stop()
-        self.is_streaming = True
+        self.is_streaming = False
     
     def run(self):
         while 1:
