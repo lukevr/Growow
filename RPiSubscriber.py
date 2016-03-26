@@ -13,17 +13,33 @@ class RasPiVidThread(Thread):
     def __init__(self):
         super(self.__class__,self).__init__()
         self.event_stop = Event()
-        #self.cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
-        self.cmd = "raspivid  -w 1280 -h 720 -b 8000000 -t 0 -o - | ffmpeg -re -i - -vcodec copy -f flv rtmp://luke:111222@178.214.221.154:1935/live/myStream"
+        self.cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
     
     def stop(self):
         self.event_stop.set()
+        pid = self.process.pid
         self.process.terminate()
+        print('raspivid terminate: {}'.format(pid))
+        
+        # cleanup: force kill if terminate weren't successfull:
+        try:
+            time.sleep(0.5)
+            os.kill(pid, 0)
+            self.process.kill()
+            print('raspivid kill: {}'.format(pid))
+        except OSError,e:
+            print('raspivid terminated: {}'.format(pid))
+            # already terminated
+            pass
+            
 
     def run(self):
         self.process = subprocess.Popen(self.cmd,
                                         stdout=subprocess.PIPE,
-                                        shell=True)
+                                        shell=True,
+                                        preexec_fn=os.setsid)
+        print('started raspivid: {}'.format(self.process.pid))
+
 
 class SubscriberListenerThread(Thread):
     def __init__(self,connect_to='tcp://178.214.221.154:5563'):
@@ -43,7 +59,7 @@ class SubscriberListenerThread(Thread):
 
     def stop_streaming(self):
         self.streamer.stop()
-        self.is_streaming = True
+        self.is_streaming = False
     
     def run(self):
         while 1:
