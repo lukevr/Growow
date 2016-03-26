@@ -13,7 +13,8 @@ class RasPiVidThread(Thread):
     def __init__(self):
         super(self.__class__,self).__init__()
         self.event_stop = Event()
-        self.cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
+        #self.cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
+        self.cmd = "raspivid  -w 1280 -h 720 -b 8000000 -t 0 -o - | ffmpeg -re -i - -vcodec copy -f flv rtmp://luke:111222@178.214.221.154:1935/live/myStream"
     
     def stop(self):
         self.event_stop.set()
@@ -49,7 +50,7 @@ class SubscriberListenerThread(Thread):
             [address, contents] = self.subscriber.recv_multipart()
             print('{} {} {}'.format(self.streamer,
                                     repr(address),
-                                    rerp(contents)))
+                                    repr(contents)))
             if "P" == address and not self.is_streaming:
                 self.start_streaming()
 
