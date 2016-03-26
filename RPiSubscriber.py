@@ -22,7 +22,8 @@ class RasPiVidThread(Thread):
     def run(self):
         self.process = subprocess.Popen(self.cmd,
                                         stdout=subprocess.PIPE,
-                                        shell=True)
+                                        shell=True,
+                                        preexec_fn=os.setsid)
 
 class SubscriberListenerThread(Thread):
     def __init__(self,connect_to='tcp://178.214.221.154:5563'):
