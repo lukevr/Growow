@@ -17,7 +17,7 @@ class RasPiVidThread(Thread):
     
     def stop(self):
         self.event_stop.set()
-        pid = self.process.pid()
+        pid = self.process.pid
         self.process.terminate()
         # cleanup: force kill if terminate weren't successfull:
         try:
