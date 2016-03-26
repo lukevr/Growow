@@ -18,12 +18,29 @@ class RasPiVidThread(Thread):
     
     def stop(self):
         self.event_stop.set()
+        pid = self.process.pid
         self.process.terminate()
+        print('raspivid terminate: {}'.format(pid))
+        
+        # cleanup: force kill if terminate weren't successfull:
+        try:
+            time.sleep(0.5)
+            os.kill(pid, 0)
+            self.process.kill()
+            print('raspivid kill: {}'.format(pid))
+        except OSError,e:
+            print('raspivid terminated: {}'.format(pid))
+            # already terminated
+            pass
+            
 
     def run(self):
         self.process = subprocess.Popen(self.cmd,
                                         stdout=subprocess.PIPE,
-                                        shell=True)
+                                        shell=True,
+                                        preexec_fn=os.setsid)
+        print('started raspivid: {}'.format(self.process.pid))
+
 
 class SubscriberListenerThread(Thread):
     def __init__(self,connect_to='tcp://178.214.221.154:5563'):
@@ -43,7 +60,7 @@ class SubscriberListenerThread(Thread):
 
     def stop_streaming(self):
         self.streamer.stop()
-        self.is_streaming = True
+        self.is_streaming = False
     
     def run(self):
         while 1:
