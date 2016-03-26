@@ -60,7 +60,7 @@ class SubscriberListenerThread(Thread):
             [address, contents] = self.subscriber.recv_multipart()
             print('{} {} {}'.format(self.streamer,
                                     repr(address),
-                                    rerp(contents)))
+                                    repr(contents)))
             if "P" == address and not self.is_streaming:
                 self.start_streaming()
 
