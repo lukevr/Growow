@@ -13,22 +13,16 @@ class RasPiVidThread(Thread):
     def __init__(self):
         super(self.__class__,self).__init__()
         self.event_stop = Event()
-        self.cmd = "raspivid -vf -n -w 640 -h 480 -o -t 0 -b 2000000 | nc 178.214.221.154 5777"
+        self.cmd = self.cmd = "raspivid -n -w 1280 -h 720 -b 8000000 -t 0 -o - | ffmpeg -re -i - -vcodec copy -f flv rtmp://luke:111222@178.214.221.154:1935/live/myStream"
     
     def stop(self):
-        self.event_stop.set()
-        pid = self.process.pid
-        self.process.terminate()
-        print('raspivid terminate: {}'.format(pid))
-        
-        # cleanup: force kill if terminate weren't successfull:
         try:
-            time.sleep(0.5)
-            os.kill(pid, 0)
-            self.process.kill()
-            print('raspivid kill: {}'.format(pid))
+            self.event_stop.set()
+            pid = self.process.pid
+            os.killpg(os.getpgid(pid), signal.SIGTERM)
+            print('raspivid kill process group: {}'.format(pid))
         except OSError,e:
-            print('raspivid terminated: {}'.format(pid))
+            print('raspivid already terminated: {}'.format(pid))
             # already terminated
             pass
             
@@ -54,14 +48,22 @@ class SubscriberListenerThread(Thread):
         self.run()
     
     def start_streaming(self):
-        self.is_streaming = True
-        self.streamer.run()
+        if not(self.is_streaming):
+            self.is_streaming = True
+            self.streamer.run()
+        else:
+            print("Already streaming!")
 
     def stop_streaming(self):
-        self.streamer.stop()
-        self.is_streaming = False
+        if(self.is_streaming):
+            self.streamer.stop()
+            self.is_streaming = False
+        else:
+            print("Already stoped streaming!")
     
     def run(self):
+        # Start streaming on START, e.g. after reboot
+        self.start_streaming()
         while 1:
             [address, contents] = self.subscriber.recv_multipart()
             print('{} {} {}'.format(self.streamer,
@@ -70,8 +72,8 @@ class SubscriberListenerThread(Thread):
             if "P" == address and not self.is_streaming:
                 self.start_streaming()
 
-            if "S" == address and self.is_streaming:
-                self.stop_streaming()
+    #        if "S" == address and self.is_streaming:
+    #            self.stop_streaming()
             
             time.sleep(1)
 
